@@ -96,4 +96,5 @@ int main() {
     close(pipe2[1]);
     
     wait(&s);
+    return 0;
 }
