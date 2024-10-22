@@ -18,7 +18,6 @@ void affiche(int sec, int min, int hour) {
 
 // signum nhận giá trị là số hiệu của tín hiệu mà tiến trình nhận được như sigalrm, sigint,sigusr1,..
 void fs(int signum) {
-    sig_atomic_t temp_s = s;
     if (write(pipeS[1], (const void *)&s, sizeof(s)) == -1) {
         perror("Error writing to pipeS");
         exit(1);
@@ -33,12 +32,12 @@ void fs(int signum) {
 }
 
 void fm(int signum) {
-    sig_atomic_t temp_m = m;
-    if (write(pipeS[1], &temp_m, sizeof(temp_m)) == -1) {
+    m++;
+    if (write(pipeM[1], (const void *)&m, sizeof(m)) == -1) {
         perror("Error writing to pipeM");
         exit(1);
     }
-    m++;
+    
     if (m == 60) {
         m = 0;
         kill(pidH, SIGUSR2);
@@ -46,9 +45,8 @@ void fm(int signum) {
 }
 
 void fh(int signum) {
-    sig_atomic_t temp_h = h;
-    write(pipeH[1], &temp_h, sizeof(temp_h));
     h++;
+    write(pipeH[1], (const void *)&h, sizeof(h));
     if (h == 24) {
         h = 0;
     }
@@ -96,12 +94,16 @@ int main() {
         }
     } else {
         // pere
+        int x;
+        printf("Entrer nombre de secondes: ");
+        scanf("%d",&x);
+
         close(pipeM[1]); // Đóng đầu ghi của pipeM
         close(pipeH[1]); // Đóng đầu ghi của pipeH
 
         pidM = p;
         signal(SIGALRM, fs); 
-        alarm(1);
+        //alarm(1);
 
         // flag pour verifier si dans pipe il y a quelque chose
         int flag1 = fcntl(pipeM[0], F_GETFL, 0);
@@ -109,10 +111,12 @@ int main() {
         int flag2 = fcntl(pipeH[0], F_GETFL, 0);
         fcntl(pipeH[0], F_SETFL, flag2 | O_NONBLOCK);
 
-        for (;;) { 
-            int sec,min,hour;
-            min = 0;
-            hour = 0;
+        int sec,min,hour;
+        min = 0;
+        hour = 0;
+
+        for (int i = 0; i <= x; i++) { 
+            alarm(1);
             if (read(pipeS[0], &sec, sizeof(sec)) == -1) {
                 perror("Error reading from pipeS");
                 exit(1);
