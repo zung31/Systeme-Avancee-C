@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 volatile sig_atomic_t counter = 0;
+pid_t child_pid;
 
 void handle_ping(int sig) {
     counter++;
@@ -16,7 +17,7 @@ void handle_pong(int sig) {
     counter++;
     printf("pong %d ", counter);
     fflush(stdout);
-    kill(getpid() + 1, SIGUSR2); // envoyer signal à child (ping)
+    kill(child_pid, SIGUSR2); // envoyer signal à child (ping)
 }
 
 int main() {
@@ -34,6 +35,7 @@ int main() {
     } 
     else { // pere (pong)
         int i = 0;
+        child_pid = pid;
         signal(SIGUSR1, handle_pong); // thiết lập hàm xử lí cho SIGUSR1
         sleep(1);
         //kill(pid, SIGUSR2); // commencer par envoyer signal à fil (ping)
